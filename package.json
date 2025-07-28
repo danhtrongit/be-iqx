@@ -34,7 +34,10 @@
     "backup-list": "node tools/backup-manager.js list",
     "backup-cleanup": "node tools/backup-manager.js cleanup",
     "backup-stats": "node tools/backup-manager.js stats",
-    "test-backup": "node test_backup_tools.js"
+    "test-backup": "node test_backup_tools.js",
+    "backup-nodejs": "node tools/nodejs-backup.js --data",
+    "backup-nodejs-table": "node tools/nodejs-backup.js --table",
+    "backup-test-connection": "node tools/nodejs-backup.js --test"
   },
   "keywords": ["nodejs", "express", "postgresql", "stock-data", "api"],
   "author": "",
