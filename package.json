@@ -46,7 +46,9 @@
     "pm2:restart": "./scripts/pm2-restart.sh",
     "pm2:logs": "./scripts/pm2-logs.sh",
     "pm2:monitor": "./scripts/pm2-monitor.sh",
-    "pm2:status": "pm2 status be-iqx"
+    "pm2:status": "pm2 status be-iqx",
+    "convert-backup": "node tools/convert-backup-format.js",
+    "convert-backup-all": "node tools/convert-backup-format.js --all"
   },
   "keywords": ["nodejs", "express", "postgresql", "stock-data", "api"],
   "author": "",
