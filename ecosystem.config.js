@@ -3,7 +3,6 @@ module.exports = {
     {
       name: 'be-iqx',
       script: 'src/app.js',
-      cwd: '/Users/danhtrongtran/Documents/iqx/final/be-iqx',
       instances: 1,
       exec_mode: 'fork',
       
