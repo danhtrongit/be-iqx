@@ -57,7 +57,7 @@ class AdminController {
   static async fetchSpecificTicker(req, res) {
     try {
       const { ticker } = req.params;
-      
+
       if (!ticker) {
         return res.status(400).json({
           success: false,
@@ -65,14 +65,46 @@ class AdminController {
         });
       }
 
-      const simplizeApiService = new SimplizeApiService();
-      const result = await simplizeApiService.fetchTickerData(ticker.toUpperCase());
-      
-      res.json({
-        success: true,
-        message: `Data fetched successfully for ${ticker.toUpperCase()}`,
-        data: result
-      });
+      const tickerUpper = ticker.toUpperCase();
+
+      // Check if it's an index (VNINDEX, HNX-INDEX, etc.)
+      const isIndex = tickerUpper === 'VNINDEX' || tickerUpper === 'HNX-INDEX' || tickerUpper === 'UPCOM-INDEX';
+
+      if (isIndex) {
+        // For indices, only collect historical price data
+        const HistoricalPriceService = require('../services/HistoricalPriceService');
+        const historicalPriceService = new HistoricalPriceService();
+
+        const result = await historicalPriceService.fetchHistoricalPrices(tickerUpper, 0, 5);
+
+        res.json({
+          success: true,
+          message: `Historical price data collected for ${tickerUpper}`,
+          data: {
+            ticker: tickerUpper,
+            type: 'index',
+            dataCollected: {
+              basicInfo: false,
+              financials: false,
+              technicalAnalysis: false,
+              historicalPrices: true,
+              ownership: false,
+              image: false
+            },
+            historicalData: result
+          }
+        });
+      } else {
+        // For regular stocks, use SimplizeApiService
+        const simplizeApiService = new SimplizeApiService();
+        const result = await simplizeApiService.fetchTickerData(tickerUpper);
+
+        res.json({
+          success: true,
+          message: `Data fetched successfully for ${tickerUpper}`,
+          data: result
+        });
+      }
     } catch (error) {
       console.error(`Error fetching data for ${req.params.ticker}:`, error);
       res.status(500).json({
