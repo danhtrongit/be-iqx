@@ -60,22 +60,61 @@ class DatabaseBackup {
 
   async createFullBackup() {
     this.log('\n🗄️  Creating full database backup...', 'cyan');
-    
+
     const backupFile = path.join(this.backupDir, `iqx_full_backup_${this.timestamp}.sql`);
-    
+
     try {
-      const command = `PGPASSWORD="${this.dbConfig.password}" pg_dump -h ${this.dbConfig.host} -p ${this.dbConfig.port} -U ${this.dbConfig.user} -d ${this.dbConfig.database} --verbose --clean --no-owner --no-privileges`;
-      
+      const command = `PGPASSWORD="${this.dbConfig.password}" pg_dump -h ${this.dbConfig.host} -p ${this.dbConfig.port} -U ${this.dbConfig.user} -d ${this.dbConfig.database} --verbose --clean --no-owner --no-privileges --file="${backupFile}"`;
+
       this.log(`📝 Executing: pg_dump to ${backupFile}`, 'yellow');
-      
-      const output = execSync(command, { encoding: 'utf8', maxBuffer: 1024 * 1024 * 100 });
-      fs.writeFileSync(backupFile, output);
-      
-      const stats = fs.statSync(backupFile);
-      this.log(`✅ Full backup completed: ${backupFile}`, 'green');
-      this.log(`📊 File size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`, 'blue');
-      
-      return backupFile;
+
+      // Sử dụng spawn thay vì execSync để tránh buffer overflow
+      const { spawn } = require('child_process');
+
+      return new Promise((resolve, reject) => {
+        const env = { ...process.env, PGPASSWORD: this.dbConfig.password };
+        const pgDump = spawn('pg_dump', [
+          '-h', this.dbConfig.host,
+          '-p', this.dbConfig.port.toString(),
+          '-U', this.dbConfig.user,
+          '-d', this.dbConfig.database,
+          '--verbose',
+          '--clean',
+          '--no-owner',
+          '--no-privileges',
+          '--file=' + backupFile
+        ], { env });
+
+        let errorOutput = '';
+
+        pgDump.stderr.on('data', (data) => {
+          // pg_dump outputs progress to stderr, which is normal
+          const message = data.toString();
+          if (message.includes('error:') || message.includes('FATAL:')) {
+            errorOutput += message;
+          }
+        });
+
+        pgDump.on('close', (code) => {
+          if (code === 0) {
+            try {
+              const stats = fs.statSync(backupFile);
+              this.log(`✅ Full backup completed: ${backupFile}`, 'green');
+              this.log(`📊 File size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`, 'blue');
+              resolve(backupFile);
+            } catch (err) {
+              reject(new Error(`Backup file not created: ${err.message}`));
+            }
+          } else {
+            reject(new Error(`pg_dump failed with code ${code}: ${errorOutput}`));
+          }
+        });
+
+        pgDump.on('error', (error) => {
+          reject(new Error(`Failed to start pg_dump: ${error.message}`));
+        });
+      });
+
     } catch (error) {
       this.log(`❌ Full backup failed: ${error.message}`, 'red');
       throw error;
@@ -108,22 +147,58 @@ class DatabaseBackup {
 
   async createDataOnlyBackup() {
     this.log('\n📊 Creating data-only backup...', 'cyan');
-    
+
     const backupFile = path.join(this.backupDir, `iqx_data_${this.timestamp}.sql`);
-    
+
     try {
-      const command = `PGPASSWORD="${this.dbConfig.password}" pg_dump -h ${this.dbConfig.host} -p ${this.dbConfig.port} -U ${this.dbConfig.user} -d ${this.dbConfig.database} --data-only --verbose --no-owner --no-privileges`;
-      
       this.log(`📝 Executing: pg_dump data-only to ${backupFile}`, 'yellow');
-      
-      const output = execSync(command, { encoding: 'utf8', maxBuffer: 1024 * 1024 * 100 });
-      fs.writeFileSync(backupFile, output);
-      
-      const stats = fs.statSync(backupFile);
-      this.log(`✅ Data backup completed: ${backupFile}`, 'green');
-      this.log(`📊 File size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`, 'blue');
-      
-      return backupFile;
+
+      // Sử dụng spawn để tránh buffer overflow
+      const { spawn } = require('child_process');
+
+      return new Promise((resolve, reject) => {
+        const env = { ...process.env, PGPASSWORD: this.dbConfig.password };
+        const pgDump = spawn('pg_dump', [
+          '-h', this.dbConfig.host,
+          '-p', this.dbConfig.port.toString(),
+          '-U', this.dbConfig.user,
+          '-d', this.dbConfig.database,
+          '--data-only',
+          '--verbose',
+          '--no-owner',
+          '--no-privileges',
+          '--file=' + backupFile
+        ], { env });
+
+        let errorOutput = '';
+
+        pgDump.stderr.on('data', (data) => {
+          const message = data.toString();
+          if (message.includes('error:') || message.includes('FATAL:')) {
+            errorOutput += message;
+          }
+        });
+
+        pgDump.on('close', (code) => {
+          if (code === 0) {
+            try {
+              const stats = fs.statSync(backupFile);
+              this.log(`✅ Data backup completed: ${backupFile}`, 'green');
+              this.log(`📊 File size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`, 'blue');
+              resolve(backupFile);
+            } catch (err) {
+              reject(new Error(`Backup file not created: ${err.message}`));
+            }
+          } else {
+            reject(new Error(`pg_dump failed with code ${code}: ${errorOutput}`));
+          }
+        });
+
+        pgDump.on('error', (error) => {
+          reject(new Error(`Failed to start pg_dump: ${error.message}`));
+        });
+      });
+
     } catch (error) {
       this.log(`❌ Data backup failed: ${error.message}`, 'red');
       throw error;

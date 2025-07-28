@@ -37,7 +37,16 @@
     "test-backup": "node test_backup_tools.js",
     "backup-nodejs": "node tools/nodejs-backup.js --data",
     "backup-nodejs-table": "node tools/nodejs-backup.js --table",
-    "backup-test-connection": "node tools/nodejs-backup.js --test"
+    "backup-test-connection": "node tools/nodejs-backup.js --test",
+    "backup-simple": "node tools/simple-backup.js --full",
+    "backup-compressed": "node tools/simple-backup.js --compressed",
+    "backup-large": "node tools/simple-backup.js --large",
+    "pm2:start": "./scripts/pm2-start.sh",
+    "pm2:stop": "./scripts/pm2-stop.sh",
+    "pm2:restart": "./scripts/pm2-restart.sh",
+    "pm2:logs": "./scripts/pm2-logs.sh",
+    "pm2:monitor": "./scripts/pm2-monitor.sh",
+    "pm2:status": "pm2 status be-iqx"
   },
   "keywords": ["nodejs", "express", "postgresql", "stock-data", "api"],
   "author": "",
