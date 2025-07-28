@@ -63,3 +63,13 @@ src/uploads/images/*
 # Build
 dist/
 build/
+
+# Backup files (should not be in git repository)
+backups/
+*.sql
+*.dump
+*.tar.gz
+
+# Test and demo files
+test_*.js
+demo_*.js
